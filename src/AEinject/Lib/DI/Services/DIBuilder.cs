@@ -35,7 +35,20 @@ public class DIBuilder
 
         _container.AddService(descriptor);
     }
-    public void AddSingleton<Interface, Class>(object[] parameters) { }
+    public void AddSingleton<Interface, Class>(object[] parameters) 
+    {
+		Сheck(typeof(Interface),
+			typeof(Class));
+
+		ServiceDescriptor descriptor = new(
+			typeof(Interface),
+			Singleton,
+			typeof(Class),
+            parameters);
+
+
+		_container.AddService(descriptor);
+	}
     public void AddTransient<Interface, Class>() { }
     public void AddTransient<Interface, Class>(object[] parameters) { }
 

@@ -15,12 +15,14 @@ public class ServiceProvider
 
     internal static ServiceProvider GetServiceProvider() => new ServiceProvider();
 
+
+    
     public T1 GetService<T1>()
     {
         ServiceDescriptor descriptor = _container.GetService<T1>();
 
-        var @class = Activator.CreateInstance(descriptor.TypeImplementation);
-
+        //var @class = Activator.CreateInstance(descriptor.TypeImplementation);
+        var @class = descriptor.GetInstance();
         if (@class is T1 rez)
             return rez;
 
