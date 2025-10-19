@@ -8,41 +8,28 @@ namespace AEinject.Lib.DI.Container
 {
 	internal class ServiceDescriptor
 	{
-		internal Type ServiceType;
-		internal Type TypeImplementation;
-		internal ServiceLifeTime ServiceLifeTime;
-		internal object[]? ClassParams;
+		internal readonly Type ServiceType;
+		internal readonly Type TypeImplementation;
+		internal readonly ServiceLifeTime ServiceLifeTime;
+		internal readonly object[]? ClassParams;
+		private readonly LifeTimeManagerFactory _factory;
 
-		public ServiceDescriptor(Type serviceType, ServiceLifeTime serviceLifeTime, Type typeImplementation)
+		public ServiceDescriptor(Type serviceType, ServiceLifeTime serviceLifeTime, Type typeImplementation, object[]? classParams = null)
 		{
 			ServiceType = serviceType;
 			ServiceLifeTime = serviceLifeTime;
 			TypeImplementation = typeImplementation;
+			ClassParams = classParams;
 
+			_factory = new(serviceLifeTime, typeImplementation, serviceType, classParams);
 		}
 
-		public ServiceDescriptor(Type serviceType, ServiceLifeTime serviceLifeTime, Type typeImplementation, object[] @params)
-			: this(serviceType,
-				  serviceLifeTime,
-				  typeImplementation)
-		{
-			ClassParams = @params;
-		}
 
 		internal object GetInstance()
 		{
-			object instance;
+			ILifeTimeManager instance = _factory.GetInstance();
 
-			if (ClassParams is null)
-			{
-				instance = Activator.CreateInstance(TypeImplementation)!;
-			}
-			else
-			{
-				instance = Activator.CreateInstance(TypeImplementation, ClassParams)!;
-			}
-
-			return instance;
+			return instance.GetInstance();
 		}
 
 	}
