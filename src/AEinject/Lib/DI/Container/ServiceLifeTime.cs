@@ -1,9 +1,10 @@
-﻿namespace AEinject.Lib.DI.Container
+﻿namespace AEInject.Lib.DI.Container
 {
     internal enum ServiceLifeTime
     {
         Singleton,
-        Transient
+        Transient,
+        Scope
     }
 
 }

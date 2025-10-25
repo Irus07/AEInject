@@ -1,11 +1,14 @@
-﻿using System;
+﻿using AEInject.Lib.Attribute;
+using AEInject.Lib.DI.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AEinject.Lib.DI.Container
+namespace AEInject.Lib.DI.Container
 {
+    [DIFactory]
     internal class DIContainer
     {
         protected static Dictionary<Type, ServiceDescriptor> _container;
@@ -22,6 +25,8 @@ namespace AEinject.Lib.DI.Container
         internal object GetService(Type ServiceType)
         {
             throw new NotImplementedException();
+
+            
         }
 
         internal void AddService(ServiceDescriptor descriptor) => _container.Add(descriptor.ServiceType, descriptor);

@@ -1,4 +1,4 @@
-﻿namespace AEinject.Lib.DI.Container
+﻿namespace AEInject.Lib.DI.Container
 {
 	internal class TransientLifeManager : ILifeTimeManager
 	{
@@ -23,5 +23,4 @@
 			return instance!;
 		}
 	}
-
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AEinject.Lib.DI.Container
+namespace AEInject.Lib.DI.Container
 {
 	internal class ServiceDescriptor
 	{

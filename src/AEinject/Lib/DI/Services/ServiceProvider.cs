@@ -1,6 +1,6 @@
-﻿using AEinject.Lib.DI.Container;
+﻿using AEInject.Lib.DI.Container;
 
-namespace AEinject.Lib.DI.Services;
+namespace AEInject.Lib.DI.Services;
 
 public class ServiceProvider
 {

@@ -8,6 +8,13 @@
 
   <ItemGroup>
     <Folder Include="Analyzer\" />
+	 
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DIFactoryGenerator\DIFactoryGenerator.csproj"
+					  OutputItemType="Analyzer"
+                        ReferenceOutputAssembly="false"   />
   </ItemGroup>
 
 </Project>

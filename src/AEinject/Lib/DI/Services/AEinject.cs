@@ -1,6 +1,6 @@
-﻿using AEinject.Lib.DI;
-using AEinject.Lib.DI.Services;
-namespace AEinject;
+﻿using AEInject.Lib.DI;
+using AEInject.Lib.DI.Services;
+namespace AEInject;
 
 public static class AEinject
 {
