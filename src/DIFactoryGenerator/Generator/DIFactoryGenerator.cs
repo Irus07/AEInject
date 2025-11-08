@@ -5,10 +5,12 @@ using System.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Reflection.Metadata;
+using System.Threading;
+using DIFactoryGenerator.Builders;
 
 namespace DIFactoryGenerator
 {
-	[Generator]
+    [Generator]
 	public class DIFactoryGenerator : IIncrementalGenerator
 	{
 		public const string ATTR_NAME = "AEInject.Lib.Attribute.DIFactoryAttribute";
@@ -20,12 +22,9 @@ namespace DIFactoryGenerator
 
 			var classProvider = context.SyntaxProvider
 				.CreateSyntaxProvider(
-					(s, _) => (s is ClassDeclarationSyntax),
-					(ctx, _) =>
-					{
-						var classSyntax = (ClassDeclarationSyntax)ctx.Node;
-						return ctx.SemanticModel.GetDeclaredSymbol(classSyntax);
-					})
+					NodeTemplate,
+					SyntaxTemplate
+					)
 				.Where(rez => !(rez is null));
 
 
@@ -42,10 +41,15 @@ namespace DIFactoryGenerator
 				CodeBuilder.GenerateSourceCode(productionContext, classSymbol);
 			});
 
-
 		}
 
+		private static bool NodeTemplate(SyntaxNode node, CancellationToken token) => node is ClassDeclarationSyntax;
 
+		private static ISymbol SyntaxTemplate(GeneratorSyntaxContext context, CancellationToken token)
+		{
+			var classSyntax = (ClassDeclarationSyntax)context.Node;
+			return context.SemanticModel.GetDeclaredSymbol(classSyntax);
+		}
 
 	}
 }
