@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace DIFactoryGenerator.Accessors
+namespace FastAccessor
 {
     internal static class PrivateFieldAccessor<T>
     {

@@ -30,5 +30,18 @@ public class ServiceProvider
         throw new NotImplementedException();
     }
 
+	public static T1 GetServiceInstance<T1>()
+	{
+		ServiceDescriptor descriptor = _container.GetService<T1>();
+
+		//var @class = Activator.CreateInstance(descriptor.TypeImplementation);
+		var @class = descriptor.GetInstance();
+		if (@class is T1 rez)
+			return rez;
+
+
+		throw new NotImplementedException();
+	}
+
 
 }

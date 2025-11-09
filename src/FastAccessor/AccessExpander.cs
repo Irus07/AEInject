@@ -1,4 +1,4 @@
-﻿namespace DIFactoryGenerator.Accessors
+﻿namespace FastAccessor.Extensions
 {
     public static class AccessExpander
     {

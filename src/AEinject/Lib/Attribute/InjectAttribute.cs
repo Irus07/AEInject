@@ -9,6 +9,6 @@
 		)]
 	public sealed class InjectAttribute : System.Attribute
 	{
-		
+		// AEInject.Lib.Attribute.InjectAttribute
 	}
 }

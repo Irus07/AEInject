@@ -19,7 +19,7 @@ namespace DIFactoryGenerator
 
 		public void Initialize(IncrementalGeneratorInitializationContext context)
 		{
-
+			
 			var classProvider = context.SyntaxProvider
 				.CreateSyntaxProvider(
 					NodeTemplate,
@@ -30,7 +30,7 @@ namespace DIFactoryGenerator
 
 
 			var filteredClasses =
-				from x in classProvider
+				from x in classProvider 
 				where x.GetAttributes()
 					.Any(atr => atr.AttributeClass.ToDisplayString() == ATTR_NAME)
 				select x;

@@ -13,7 +13,7 @@ namespace DIFactoryGenerator.Builders
         private readonly string _type;
         private readonly bool _isStatic;
         private readonly List<(string type, string paramName)> _params;
-        private StringBuilder _body;
+        private StringBuilder _body = new StringBuilder();
 
         public StringBuilder Body
         {
@@ -74,6 +74,12 @@ namespace DIFactoryGenerator.Builders
 
             sb.AppendLine($"{_accessModifier} {@static} {_type} {_name} ({ParamsToString()})");
             sb.AppendLine("{");
+
+            foreach (var str in Body.ToString().Split('\n'))
+            {
+                sb.AppendLine("\t" + str);
+            }
+
             sb.AppendLine("}");
 
             return sb.ToString();
@@ -96,5 +102,24 @@ namespace DIFactoryGenerator.Builders
 
             return sb.ToString();
         }
+        public string GetParamsNameString()
+        {
+			StringBuilder sb = new StringBuilder();
+			if (_params.Count == 0)
+				return string.Empty;
+
+
+			for (int i = 0; i < _params.Count; i++)
+			{
+				if (i < _params.Count - 1)
+					sb.Append($"{_params[i].paramName}, ");
+				else
+					sb.Append($"{_params[i].paramName}");
+			}
+
+			return sb.ToString();
+		}
+        public IEnumerable<(string paramType, string paramName)> EnumerateParams() => _params;
+        
     }
 }
