@@ -1,4 +1,4 @@
-﻿namespace AEinject.Lib.DI.Container
+﻿namespace AEInject.Lib.DI.Container
 {
 	interface ILifeTimeManager
 	{

@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using AEinject.Lib.DI.Container;
-using static AEinject.Lib.DI.Container.ServiceLifeTime;
+using AEInject.Lib.DI.Container;
+using static AEInject.Lib.DI.Container.ServiceLifeTime;
 
-namespace AEinject.Lib.DI.Services;
+namespace AEInject.Lib.DI.Services;
 
 public class DIBuilder
 {
