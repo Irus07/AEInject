@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -23,26 +24,22 @@ namespace DIFactoryGenerator.Builders
 				return;
 			}
 
-
-
-			//var injector = GetFieldInjectAttr(typeSymbol);
-			//var constructors = GetConstructors(symbol);
-			//injector.Start();
-			//constructors.Start();
-
-
-			//Debugger.Launch();
+			// Debugger.Launch();
 
 
 			string code = $@"
 using AEInject.Lib.DI.Services;
 using static FastAccessor.Extensions.AccessExpander;
+using AEinject.Lib.Attribute;
 namespace DIFactoryGenerator.Factories 
 {{
-	public static class {symbol.Name + "_IncrementalFactory"} 
+	[GeneratedFactoryAttribute(typeof({typeSymbol.ToDisplayString()}))]
+	internal static class {symbol.Name + "_IncrementalFactory"} 
 	{{
 {GetConstructors(symbol)}
 {GetFieldInjectAttr(typeSymbol).GetAwaiter().GetResult()}
+
+
 	}}
 }}";
 
@@ -65,7 +62,7 @@ namespace DIFactoryGenerator.Factories
 
 			foreach (var constructor in constructors)
 			{
-				MethodBuilder mb = new MethodBuilder("internal", true, typeSymbol.ToDisplayString(), "CreateFromMethodBuilder", constructor);
+				MethodBuilder mb = new MethodBuilder("internal", true, typeSymbol.ToDisplayString(), "Create", constructor);
 
 				mb.Body.AppendLine($"var instance = new {typeSymbol.ToDisplayString()}({mb.GetParamsNameString()});");
 				mb.Body.AppendLine($"SetDependencies(instance);");
@@ -81,9 +78,6 @@ namespace DIFactoryGenerator.Factories
 
 		private static async Task<string> GetFieldInjectAttr(INamedTypeSymbol symbol)
 		{
-
-
-
 			var rez = await Task<IEnumerable<ISymbol>>.Run(() =>
 			 {
 				 var sortrez =
@@ -103,7 +97,11 @@ namespace DIFactoryGenerator.Factories
 				}
 
 			}
-			return mb.ToString();
+			StringBuilder sb = new StringBuilder();
+
+			sb.AppendLine("\t\t" + mb.ToString());
+			return sb.ToString();
 		}
+
 	}
 }

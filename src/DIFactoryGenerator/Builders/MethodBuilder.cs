@@ -27,7 +27,15 @@ namespace DIFactoryGenerator.Builders
             _isStatic = isStatic;
             _type = returnType;
             _name = name;
-            _params = @params.ToList();
+            if(@params is null)
+            {
+                _params = new List<(string type, string paramName)>();
+            }
+            else
+            {
+				_params = @params.ToList();
+			}
+            
 
         }
         public MethodBuilder(string accessModifier, bool isStatic, string returnType, string name, params (string type, string paramName)[] @params)
@@ -65,7 +73,21 @@ namespace DIFactoryGenerator.Builders
             _name = name;
             _params = @params.ToList();
         }
+        public void AddParam(string paramType , string paramName, string defValue = null)
+        {
+            if(!(defValue is null))
+            {
+                paramName += $" = {defValue}";
+				_params.Insert(_params.Count, (paramType, paramName));
+            }
+            else
+            {
+				_params.Add((paramType, paramName));
 
+			}
+
+
+		}
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
