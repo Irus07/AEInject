@@ -8,7 +8,6 @@ public class DIBuilder
 {
 	private DIBuilder()
 	{
-
 		if (_container is null)
 			_container = new DIContainer();
 	}
