@@ -26,11 +26,12 @@ namespace AEInject.Lib.DI.Container
         {
             throw new NotImplementedException();
 
-            
         }
 
         internal void AddService(ServiceDescriptor descriptor) => _container.Add(descriptor.ServiceType, descriptor);
 
         internal bool ContainsKey(Type key) => _container.ContainsKey(key);
+
+
     }
 }
