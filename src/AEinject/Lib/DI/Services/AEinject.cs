@@ -5,5 +5,5 @@ namespace AEInject;
 public static class AEinject
 {
 	public static DIBuilder CreateBuilder() => DIBuilder.CreateDIBuilder();
-	public static ServiceProvider GetServiceProvider() => ServiceProvider.GetServiceProvider();
+	//public static ServiceProvider GetServiceProvider => ServiceProvider.GetServiceProvider();
 }
