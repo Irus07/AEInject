@@ -2,104 +2,116 @@
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace AEinject.Lib
 {
 	public static class FactoryLocator
 	{
-		private readonly static Lazy<Dictionary<Type, Func<object>>> _cache;
-		private static readonly Lazy<Dictionary<string, Type>> _typeIndex;
-		private static readonly ConcurrentDictionary<Type, Type> _factoryToServiceCache ;
-		public static IReadOnlyDictionary<Type, Func<object>> GetFactories() => _cache.Value;
+		public static readonly ConcurrentDictionary<Type, IEnumerable<MethodInfo>> _factories;
+		private static bool _isInit = false;
 
 		static FactoryLocator()
 		{
-			_cache = new Lazy<Dictionary<Type, Func<object>>>(() =>
+			_factories = new ConcurrentDictionary<Type, IEnumerable<MethodInfo>>();
+		}
+		public static void Init()
+		{
+			if (!_isInit)
 			{
-				var factories = new Dictionary<Type, Func<object>>();
-				var assemblies = GetRelevantAssemblies();
+				TriggerAttributes();
+				_isInit = true;
+			}
+			return;
+		}
+
+		public static void Register(Type factoryType, Type targetType)
+		{
+			if (_factories.ContainsKey(factoryType))
+			{
+				return;
+			}
+
+			var targetMethods =
+				from method in targetType.GetMethods()
+				where method.Name == "Create"
+				select method;
+
+			_factories.TryAdd(targetType, targetMethods);
+
+		}
+		internal static T1 CreateInstance<T1>(object[] @params = null)
+		{
+
+			var targetMethod = _factories[typeof(T1)].FirstOrDefault((method) => ParametersMatch(method.GetParameters(), @params.Select((c) => c.GetType()).ToArray()));
+
+			if (targetMethod.Invoke(null, @params) is T1 targetObject)
+			{
+				return targetObject;
+			}
+
+			throw new ArgumentException($"the factory method for creating a {typeof(T1).ToString()} type object with @params parameters was not found", nameof(@params));
+		}
+
+		private static bool ParametersMatch(ParameterInfo[] parameters, Type[] argumentTypes)
+		{
+			if (parameters.Length != argumentTypes.Length)
+				return false;
+
+			for (int i = 0; i < parameters.Length; i++)
+			{
+				if (!parameters[i].ParameterType.IsAssignableFrom(argumentTypes[i]))
+					return false;
+			}
+
+			return true;
+		}
+
+		private static void TriggerAttributes()
+		{
+			var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			Type targetAttribute = typeof(LocatorFactoryAttribute);
+
+			var targetAssemblies =
+				from assembly in assemblies
+				let assemblyName = assembly.GetName().Name
+				where !assemblyName.StartsWith("System.") &&
+					  !assemblyName.StartsWith("Microsoft.") &&
+					  !assemblyName.StartsWith("Windows.") &&
+					  !assemblyName.StartsWith("mscorlib") &&
+					  !assemblyName.StartsWith("netstandard") &&
+					  !assemblyName.Equals("System") &&
+					  !assembly.IsDynamic
+				select assembly;
 
 
-				foreach (var assembly in assemblies)
+
+			Parallel.ForEach(targetAssemblies, (assembly) =>
+			{
+				try
 				{
-					var factoryTypes = 
-					from type in assembly.GetTypes()
-					where type.Name.EndsWith("_IncrementalFactory")
-					where type.Namespace == "DIFactoryGenerator.Factories"
-					where type.IsClass
-					select type;
-
-
-					foreach (var factoryType in factoryTypes)
+					foreach (var type in assembly.GetTypes())
 					{
-						var serviceType = ExtractServiceType(factoryType);
-						if (serviceType != null)
+						try
 						{
-							var factoryDelegate = CreateCompiledDelegate(factoryType);
-							factories[serviceType] = factoryDelegate;
+							if (type.IsDefined(targetAttribute, false))
+							{
+								var attributes = type.GetCustomAttributes(targetAttribute, false);
+							}
 						}
+						catch (Exception ex) when (ex is TypeLoadException || ex is FileNotFoundException || ex is BadImageFormatException)
+						{
+						}
+
 					}
 				}
-				return factories;
-			}, isThreadSafe: true);
-			_factoryToServiceCache = new ConcurrentDictionary<Type, Type> { };
-			_typeIndex = new Lazy<Dictionary<string, Type>>(() =>
-			{
-				var assemblies = GetUserAssemblies();
-				return assemblies
-					.SelectMany(asm =>
-					{
-						try { return asm.GetTypes(); }
-						catch { return Array.Empty<Type>(); }
-					})
-					.GroupBy(t => t.Name)
-					.ToDictionary(g => g.Key, g => g.First()); 
+				catch (Exception ex) when (ex is FileNotFoundException || ex is BadImageFormatException || ex is ReflectionTypeLoadException)
+				{
+
+				}
+
 			});
-		}
 
-		private static Func<object> CreateCompiledDelegate(Type factoryType)
-		{
-			var factoryMethod = factoryType.GetMethod("Create",BindingFlags.Public | BindingFlags.Static);
-
-			if (factoryMethod is null)
-				return null;
-
-			
-			var call = Expression.Call(factoryMethod);
-			var lambda = Expression.Lambda<Func<object>>(call);
-			return lambda.Compile();
-		}
-
-		private static Type ExtractServiceType(Type factoryType)
-		{
-			var serviceName = factoryType.Name.Replace("_IncrementalFactory", "");
-			_typeIndex.Value.TryGetValue(serviceName, out var serviceType);
-			return serviceType;
-		}
-
-		private static IEnumerable<Assembly> GetRelevantAssemblies()
-		{
-			return AppDomain.CurrentDomain.GetAssemblies()
-				.Where(asm =>
-					!asm.IsDynamic &&
-					!asm.FullName.StartsWith("System.") &&
-					!asm.FullName.StartsWith("Microsoft.") &&
-					!asm.FullName.StartsWith("netstandard"));
-		}
-
-		private static IEnumerable<Assembly> GetUserAssemblies()
-		{
-			
-			return AppDomain.CurrentDomain.GetAssemblies()
-				.Where(asm => !IsSystemAssembly(asm));
-		}
-		private static bool IsSystemAssembly(Assembly assembly)
-		{
-			var name = assembly.FullName;
-			return name.StartsWith("System.") ||
-				   name.StartsWith("Microsoft.") ||
-				   name.StartsWith("netstandard") ||
-				   assembly.IsDynamic;
 		}
 	}
 }
