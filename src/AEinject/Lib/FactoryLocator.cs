@@ -1,103 +1,117 @@
 ﻿using AEinject.Lib.Attribute;
 using System.Collections.Concurrent;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace AEinject.Lib
 {
 	public static class FactoryLocator
 	{
-		private readonly static Lazy<ConcurrentDictionary<Type, MethodInfo>> _cache;
-
-		public static IReadOnlyDictionary<Type, MethodInfo> GetFactories() => _cache.Value;
+		public static readonly ConcurrentDictionary<Type, IEnumerable<MethodInfo>> _factories;
+		private static bool _isInit = false;
 
 		static FactoryLocator()
 		{
-			_cache = new Lazy<ConcurrentDictionary<Type, MethodInfo>>(() =>
+			_factories = new ConcurrentDictionary<Type, IEnumerable<MethodInfo>>();
+		}
+		public static void Init()
+		{
+			if (!_isInit)
 			{
-				var factories = new ConcurrentDictionary<Type, MethodInfo>();
-				var assemblies = GetRelevantAssemblies();
+				TriggerAttributes();
+				_isInit = true;
+			}
+			return;
+		}
 
-				foreach (var assembly in assemblies)
+		public static void Register(Type factoryType, Type targetType)
+		{
+			if (_factories.ContainsKey(factoryType))
+			{
+				return;
+			}
+
+			var targetMethods =
+				from method in targetType.GetMethods()
+				where method.Name == "Create"
+				select method;
+
+			_factories.TryAdd(targetType, targetMethods);
+
+		}
+		internal static T1 CreateInstance<T1>(object[] @params = null)
+		{
+
+			var targetMethod = _factories[typeof(T1)].FirstOrDefault((method) => ParametersMatch(method.GetParameters(), @params.Select((c) => c.GetType()).ToArray()));
+
+			if (targetMethod.Invoke(null, @params) is T1 targetObject)
+			{
+				return targetObject;
+			}
+
+			throw new ArgumentException($"the factory method for creating a {typeof(T1).ToString()} type object with @params parameters was not found", nameof(@params));
+		}
+
+		private static bool ParametersMatch(ParameterInfo[] parameters, Type[] argumentTypes)
+		{
+			if (parameters.Length != argumentTypes.Length)
+				return false;
+
+			for (int i = 0; i < parameters.Length; i++)
+			{
+				if (!parameters[i].ParameterType.IsAssignableFrom(argumentTypes[i]))
+					return false;
+			}
+
+			return true;
+		}
+
+		private static void TriggerAttributes()
+		{
+			var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			Type targetAttribute = typeof(LocatorFactoryAttribute);
+
+			var targetAssemblies =
+				from assembly in assemblies
+				let assemblyName = assembly.GetName().Name
+				where !assemblyName.StartsWith("System.") &&
+					  !assemblyName.StartsWith("Microsoft.") &&
+					  !assemblyName.StartsWith("Windows.") &&
+					  !assemblyName.StartsWith("mscorlib") &&
+					  !assemblyName.StartsWith("netstandard") &&
+					  !assemblyName.Equals("System") &&
+					  !assembly.IsDynamic
+				select assembly;
+
+
+
+			Parallel.ForEach(targetAssemblies, (assembly) =>
+			{
+				try
 				{
-					try
+					foreach (var type in assembly.GetTypes())
 					{
-						var factoryTypes = assembly.GetTypes()
-							.Where(type => type.Name.EndsWith("_IncrementalFactory", StringComparison.Ordinal) &&
-										  type.Namespace == "DIFactoryGenerator.Factories" &&
-										  type.IsClass && type.IsAbstract && type.IsSealed);
-
-						foreach (var factoryType in factoryTypes)
+						try
 						{
-							var serviceType = ExtractServiceType(factoryType);
-							if (serviceType != null)
+							if (type.IsDefined(targetAttribute, false))
 							{
-								var createMethod = factoryType.GetMethod("Create",
-									BindingFlags.Public | BindingFlags.Static,
-									null,
-									new Type[] { typeof(object[]) },
-									null);
-
-								if (createMethod != null)
-								{
-									factories.TryAdd(serviceType, createMethod);
-								}
+								var attributes = type.GetCustomAttributes(targetAttribute, false);
 							}
 						}
-					}
-					catch (ReflectionTypeLoadException)
-					{
-						
+						catch (Exception ex) when (ex is TypeLoadException || ex is FileNotFoundException || ex is BadImageFormatException)
+						{
+						}
+
 					}
 				}
+				catch (Exception ex) when (ex is FileNotFoundException || ex is BadImageFormatException || ex is ReflectionTypeLoadException)
+				{
 
-				return factories;
-			}, LazyThreadSafetyMode.ExecutionAndPublication);
-		}
+				}
 
-		private static Type ExtractServiceType(Type factoryType)
-		{
-			try
-			{
-				var attribute = factoryType.GetCustomAttribute<GeneratedFactoryAttribute>();
-				return attribute?.ServiceType;
-			}
-			catch
-			{
-				return null;
-			}
-		}
+			});
 
-		private static IEnumerable<Assembly> GetRelevantAssemblies()
-		{
-			return AppDomain.CurrentDomain.GetAssemblies()
-				.Where(asm => !IsSystemAssembly(asm) && !asm.IsDynamic);
-		}
-
-		private static bool IsSystemAssembly(Assembly assembly)
-		{
-			if (assembly.IsDynamic)
-				return true;
-
-			var fullName = assembly.FullName ?? "";
-			return fullName.StartsWith("System.") ||
-				   fullName.StartsWith("Microsoft.") ||
-				   fullName.StartsWith("netstandard") ||
-				   fullName.StartsWith("AEInject.") ||
-				   fullName.StartsWith("DIFactoryGenerator");
-		}
-
-		public static object CreateInstance(Type serviceType, params object[] constructorParameters)
-		{
-			if (_cache.Value.TryGetValue(serviceType, out var factoryMethod))
-			{
-				return factoryMethod.Invoke(null, new object[] { constructorParameters });
-			}
-			return null;
-		}
-
-		public static T CreateInstance<T>(params object[] constructorParameters)
-		{
-			return (T)CreateInstance(typeof(T), constructorParameters);
 		}
 	}
 }

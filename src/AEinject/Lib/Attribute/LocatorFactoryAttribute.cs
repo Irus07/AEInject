@@ -11,13 +11,17 @@ namespace AEinject.Lib.Attribute
 		AllowMultiple = false,
 		Inherited = false
 		)]
-	public class GeneratedFactoryAttribute : System.Attribute
+	public class LocatorFactoryAttribute : System.Attribute
 	{
 		public Type ServiceType { get; }
+		public Type FactoryType { get; }
 
-		public GeneratedFactoryAttribute(Type serviceType)
+		public LocatorFactoryAttribute(Type serviceType, Type factoryType)
 		{
 			ServiceType = serviceType;
+			FactoryType = factoryType;
+
+			FactoryLocator.Register(factoryType, serviceType);
 		}
 	}
 }

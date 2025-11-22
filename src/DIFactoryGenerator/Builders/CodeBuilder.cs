@@ -33,7 +33,8 @@ using static FastAccessor.Extensions.AccessExpander;
 using AEinject.Lib.Attribute;
 namespace DIFactoryGenerator.Factories 
 {{
-	[GeneratedFactoryAttribute(typeof({typeSymbol.ToDisplayString()}))]
+	[LocatorFactoryAttribute(typeof({typeSymbol.ToDisplayString()}),
+							 typeof({symbol.Name + "_IncrementalFactory"}))]
 	internal static class {symbol.Name + "_IncrementalFactory"} 
 	{{
 {GetConstructors(symbol)}
