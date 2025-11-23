@@ -13,7 +13,7 @@ public class ServiceProvider
 
     private static DIContainer _container;
 
-    internal static ServiceProvider GetServiceProvider() => new ServiceProvider();
+    public static ServiceProvider GetServiceProvider() => new ServiceProvider();
 
 
     
