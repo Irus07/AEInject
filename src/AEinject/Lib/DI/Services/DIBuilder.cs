@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using AEinject.Lib;
 using AEInject.Lib.DI.Container;
 using static AEInject.Lib.DI.Container.ServiceLifeTime;
 
@@ -8,6 +9,7 @@ public class DIBuilder
 {
 	private DIBuilder()
 	{
+		FactoryLocator.Init();
 
 		if (_container is null)
 			_container = new DIContainer();
@@ -28,14 +30,25 @@ public class DIBuilder
 		Сheck(typeof(Interface),
 			typeof(Class));
 
-		ServiceDescriptor descriptor = new(
+		if (FactoryLocator._factories.ContainsKey(typeof(Class)))
+		{
+			ServiceDescriptor serviceDescriptor = new FactoryServiceDescriptor<Class,Interface>(
+				Singleton,
+				typeof(Class),
+				parameters);
+
+			_container.AddService(serviceDescriptor);
+		}
+		else
+		{
+			ServiceDescriptor descriptor = new(
 			typeof(Interface),
 			Singleton,
 			typeof(Class),
 			parameters);
+			_container.AddService(descriptor);
+		}
 
-
-		_container.AddService(descriptor);
 	}
 
 	public void AddTransient<Interface, Class>(object[]? parameters = null)
